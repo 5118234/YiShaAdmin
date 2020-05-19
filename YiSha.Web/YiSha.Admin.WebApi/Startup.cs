@@ -1,72 +1,60 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
+using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Serialization;
-using Swashbuckle.AspNetCore.Swagger;
-using YiSha.Admin.WebApi.Controllers;
-using YiSha.Business.AutoJob;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using YiSha.Util;
-using YiSha.Util.Extension;
 using YiSha.Util.Model;
+using YiSha.Business.AutoJob;
+using YiSha.Admin.WebApi.Controllers;
 
 namespace YiSha.Admin.WebApi
 {
     public class Startup
     {
         public IConfiguration Configuration { get; }
-        public IConfigurationRoot ConfigurationRoot { get; }
 
-        public Startup(IConfiguration configuration, IHostingEnvironment env)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
-
             GlobalContext.LogWhenStart(env);
-
             GlobalContext.HostingEnvironment = env;
-
-            var builder = new ConfigurationBuilder().SetBasePath(env.ContentRootPath)
-                                                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                                                    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                                                    .AddEnvironmentVariables();
-            ConfigurationRoot = builder.Build();
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             services.AddSwaggerGen(config =>
             {
-                config.SwaggerDoc("v1", new Info { Title = "YiShaAdmin Api", Version = "v1" });
+                config.SwaggerDoc("v1", new OpenApiInfo { Title = "YiSha Api", Version = "v1" });
             });
 
             services.AddOptions();
             services.AddCors();
-            services.AddMvc().AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+            services.AddControllers(options =>
+            {
+                options.ModelMetadataDetailsProviders.Add(new ModelBindingMetadataProvider());
+            }).AddNewtonsoftJson(options =>
+            {
+                // 返回数据首字母不小写，CamelCasePropertyNamesContractResolver是小写
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver(); 
+            });
 
+            services.AddMemoryCache();
             services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(GlobalContext.HostingEnvironment.ContentRootPath + Path.DirectorySeparatorChar + "DataProtection"));
 
             GlobalContext.SystemConfig = Configuration.GetSection("SystemConfig").Get<SystemConfig>();
             GlobalContext.Services = services;
-            GlobalContext.ServiceProvider = services.BuildServiceProvider();
             GlobalContext.Configuration = Configuration;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -79,10 +67,8 @@ namespace YiSha.Admin.WebApi
             }
 
             string resource = Path.Combine(env.ContentRootPath, "Resource");
-            if (!Directory.Exists(resource))
-            {
-                Directory.CreateDirectory(resource);
-            }
+            FileHelper.CreateDirectory(resource);
+
             app.UseStaticFiles(new StaticFileOptions
             {
                 OnPrepareResponse = GlobalContext.SetCacheControl
@@ -100,8 +86,6 @@ namespace YiSha.Admin.WebApi
             {
                 builder.WithOrigins(GlobalContext.SystemConfig.AllowCorsSite.Split(',')).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
             });
-            app.UseMvc();
-
             app.UseSwagger(c =>
             {
                 c.RouteTemplate = "api-doc/{documentName}/swagger.json";
@@ -109,9 +93,14 @@ namespace YiSha.Admin.WebApi
             app.UseSwaggerUI(c =>
             {
                 c.RoutePrefix = "api-doc";
-                c.SwaggerEndpoint("v1/swagger.json", "YiShaAdmin Api v1");
+                c.SwaggerEndpoint("v1/swagger.json", "YiSha Api v1");
             });
-
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute("default", "{controller=ApiHome}/{action=Index}/{id?}");
+            });
+            GlobalContext.ServiceProvider = app.ApplicationServices;
             new JobCenter().Start(); // 定时任务
         }
     }

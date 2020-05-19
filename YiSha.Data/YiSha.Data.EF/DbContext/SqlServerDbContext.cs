@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using System.Reflection;
-using System.Data.SqlClient;
 using System.Configuration;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace YiSha.Data.EF
@@ -55,7 +52,7 @@ namespace YiSha.Data.EF
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {
                 PrimaryKeyConvention.SetPrimaryKey(modelBuilder, entity.Name);
-                var currentTableName = modelBuilder.Entity(entity.Name).Metadata.Relational().TableName;
+                var currentTableName = modelBuilder.Entity(entity.Name).Metadata.GetTableName();
                 modelBuilder.Entity(entity.Name).ToTable(currentTableName.ToLower());
 
                 var properties = entity.GetProperties();

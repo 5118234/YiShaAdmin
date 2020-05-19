@@ -239,7 +239,7 @@
                 data: postData,
                 success: function (obj) {
                     if (obj.Tag == 1) {
-                        window.location.href = ctx + "File/DownloadFile?fileName=" + obj.Result + "&delete=1";
+                        window.location.href = ctx + "File/DownloadFile?filePath=" + obj.Result + "&delete=1";
                     }
                     else {
                         ys.msgError(obj.Message);
@@ -299,7 +299,7 @@
                     return url + '?' + replaceText;
                 }
             }
-        },   
+        },
 
         isNullOrEmpty: function (obj) {
             if ((typeof (obj) == "string" && obj == "") || obj == null || obj == undefined) {
@@ -366,7 +366,7 @@
                 }
             }
             return format;
-        },      
+        },
         trimStart: function (rawStr, c) {
             if (c == null || c == '') {
                 var str = rawStr.replace(/^s*/, '');
@@ -397,6 +397,31 @@
                 return '';
             }
             return value.toString();
+        },
+        openLink: function (href, target) {
+            var a = document.createElement('a')
+            if (target) {
+                a.target = target;
+            }
+            else {
+                a.target = '_blank';
+            }
+            a.href = href;
+            a.click();
+        },
+        recursion: function (obj, id, destArr, key, parentKey) {
+            if (!key) {
+                key = "id";
+            }
+            if (!parentKey) {
+                parentKey = "parentId";
+            }
+            for (var item in obj) {
+                if (obj[item][key] == id) {
+                    destArr.push(obj[item]);
+                    return ys.recursion(obj, obj[item][parentKey], destArr, key, parentKey);
+                }
+            }           
         }
     });
 })(window.jQuery, window.ys);

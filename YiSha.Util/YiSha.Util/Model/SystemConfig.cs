@@ -20,10 +20,6 @@ namespace YiSha.Util.Model
         public bool LoginMultiple { get; set; }
         public string LoginProvider { get; set; }
         /// <summary>
-        ///  数据库超时间（秒）
-        /// </summary>
-        public int CommandTimeout { get; set; }
-        /// <summary>
         /// Snow Flake Worker Id
         /// </summary>
         public int SnowFlakeWorkerId { get; set; }
@@ -36,22 +32,22 @@ namespace YiSha.Util.Model
         /// </summary>
         public string AllowCorsSite { get; set; }
         /// <summary>
-        /// 数据库备份路径
-        /// </summary>
-        public string DatabaseBackup { get; set; }
-        /// <summary>
         /// 网站虚拟目录
         /// </summary>
         public string VirtualDirectory { get; set; }
 
-        public string AppId { get; set; }
-        public string AppSecret { get; set; }
+        public string DBProvider { get; set; }
+        public string DBConnectionString { get; set; }
         /// <summary>
-        /// 商户Id
+        ///  数据库超时间（秒）
         /// </summary>
-        public string MerchantId { get; set; }
-        public string PayKey { get; set; }
-        public string NotifyUrl { get; set; }
+        public int DBCommandTimeout { get; set; }
+        /// <summary>
+        /// 数据库备份路径
+        /// </summary>
+        public string DBBackup { get; set; }
 
+        public string CacheProvider { get; set; }
+        public string RedisConnectionString { get; set; }
     }
 }

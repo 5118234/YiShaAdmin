@@ -59,7 +59,7 @@
         }
     };
     $.fn.ysTree.defaults = {
-        url:'',
+        url: '',
         async: false,
         maxHeight: "300px",
         expandLevel: 0,
@@ -105,6 +105,8 @@
                 var targetTree = $("#" + eleTreeId);
                 var targetInput = $("#" + eleInputId);
 
+                // 用户定义的onClick回调
+                var customOnClick = _option.callback.customOnClick;
                 // OnClick callback
                 _option.callback.onClick = function (event, treeId, treeNode) {
                     var wholeName = '';
@@ -123,6 +125,10 @@
 
                     targetInput.val(wholeName);
                     targetTree.hide();
+
+                    if (customOnClick) {
+                        customOnClick(event, treeId, treeNode);
+                    }
                 };
 
                 target.ztree = $.fn.zTree.init($("#" + eleTreeId), _option, data.Result);
@@ -170,7 +176,7 @@
                 zTreeObj.cancelSelectedNode();//先取消所有的选中状态
                 zTreeObj.selectNode(node, true);//将指定ID的节点选中
                 zTreeObj.expandNode(node, true, false);//将指定ID节点展开
-                zTreeObj.setting.callback.onClick(null, zTreeObj.setting.treeId, node); //触发onclick
+                zTreeObj.setting.callback.onClick('setValue', zTreeObj.setting.treeId, node); //触发onclick
             }
             return $(target);
         }
